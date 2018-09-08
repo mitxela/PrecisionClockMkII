@@ -45,8 +45,6 @@ years: .byte 1
 tenYears: .byte 1
 
 
-timerHigh: .byte 1
-timerLow: .byte 1
 
 
 
@@ -371,10 +369,8 @@ init:
 	out TCCR1B,r16
 
 	ldi r16,high(1250)
-	sts timerHigh, r16
 	out OCR1AH,r16
 	ldi r16, low(1250)
-	sts timerLow, r16
 	out OCR1AL,r16
 
 	ldi r16,1<<OCIE1A
@@ -988,21 +984,19 @@ push ZL
 ;rjmp timingAdjEnd
 
 timingFast:
-  lds ZH, timerHigh
-  lds ZL, timerLow
+  in ZL, OCR1AL
+  in ZH, OCR1AH
   adiw ZH : ZL, 1
   rjmp timingAdjApply
 
 
 timingSlow:
-  lds ZH, timerHigh
-  lds ZL, timerLow
+  in ZL, OCR1AL
+  in ZH, OCR1AH
   sbiw ZH : ZL, 1
 
 timingAdjApply:
 
-  sts timerHigh, ZH
-  sts timerLow, ZL
   out OCR1AH, ZH
   out OCR1AL, ZL
 
