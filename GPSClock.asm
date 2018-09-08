@@ -1,4 +1,4 @@
-.include "tn2313def.inc"
+.include "tn4313def.inc"
 
 
 
@@ -45,7 +45,8 @@ years: .byte 1
 tenYears: .byte 1
 
 
-
+timerHigh: .byte 1
+timerLow: .byte 1
 
 
 
@@ -55,12 +56,15 @@ tenYears: .byte 1
 ; reset
 	rjmp init
 ; int 0
-	ldi dDeciSeconds,9  ;nop
-	ldi dCentiSeconds,9 ;nop
+  in r15,SREG
+  rjmp timingAdjust
+;	ldi dDeciSeconds,9  ;nop
+;	ldi dCentiSeconds,9 ;nop
 	nop
 ; timer1 compa
 	in r15,SREG
 
+rollover:
 
 	inc dCentiSeconds
 	cpi dCentiSeconds,10
@@ -353,15 +357,24 @@ overflow13:
 
 
 init:
-	ldi r16,low(RAMEND)
-	out SPL,r16
+
+	; Load calibration byte from EEPROM
+	; clr r16
+	; out EEAR, r16
+	; sbi EECR,EERE
+	; in r16,EEDR
+	; out OSCCAL, r16
+	; nop
+
 
 	ldi r16, (1<<WGM12|1<<CS11|1<<CS10) ;/64
 	out TCCR1B,r16
 
-	ldi r16,high(1249)
+	ldi r16,high(1250)
+	sts timerHigh, r16
 	out OCR1AH,r16
-	ldi r16, low(1249)
+	ldi r16, low(1250)
+	sts timerLow, r16
 	out OCR1AL,r16
 
 	ldi r16,1<<OCIE1A
@@ -955,8 +968,50 @@ shiftBothLoop:
 	ret
 
 
+; Calibrate interpolated centiseconds to match the 1PPS output
+timingAdjust:
+  ; if deciseconds:centiseconds <5:0, overflow occured. Timing is fast, increase OCR
+  ; if deciseconds:centiseconds <9:9, running slow, decrease OCR
+  ; exactly 9:9 - cutting it a bit fine, better slow it down by one
+
+push ZH
+push ZL
+
+  cpi dDeciSeconds, 5
+  brcs timingFast
+
+  ldi ZH, 9
+  cp dCentiSeconds, ZH
+  cpc dDeciSeconds, ZH
+  brcs timingSlow
+
+;rjmp timingAdjEnd
+
+timingFast:
+  lds ZH, timerHigh
+  lds ZL, timerLow
+  adiw ZH : ZL, 1
+  rjmp timingAdjApply
 
 
+timingSlow:
+  lds ZH, timerHigh
+  lds ZL, timerLow
+  sbiw ZH : ZL, 1
+
+timingAdjApply:
+
+  sts timerHigh, ZH
+  sts timerLow, ZL
+  out OCR1AH, ZH
+  out OCR1AL, ZL
+
+timingAdjEnd:
+  ldi dDeciSeconds,9 
+  ldi dCentiSeconds,9
+pop ZL
+pop ZH
+rjmp rollover
 
 
 
