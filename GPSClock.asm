@@ -45,7 +45,7 @@ years: .byte 1
 tenYears: .byte 1
 
 
-
+fix: .byte 1
 
 
 
@@ -69,9 +69,10 @@ rollover:
 	breq overflow1
 	
 	ldi r18,$01
-	mov r19,dCentiSeconds
-sbrs dSeconds,0
-ori r19,0b10000000
+lds r19, fix
+	eor r19,dCentiSeconds
+;sbrs dSeconds,0
+;ori r19,0b10000000
 	rcall shiftTime
 	
 	out SREG,r15
@@ -81,9 +82,10 @@ overflow1:
 
 	clr dCentiSeconds
 	ldi r18,$01
-	mov r19,dCentiSeconds
-sbrs dSeconds,0
-ori r19,0b10000000
+lds r19, fix
+	eor r19,dCentiSeconds
+;sbrs dSeconds,0
+;ori r19,0b10000000
 	rcall shiftTime
 
 
@@ -92,9 +94,10 @@ ori r19,0b10000000
 	breq overflow2
 
 	ldi r18,$02
-	mov r19,dDeciSeconds
-sbrs dSeconds,0
-ori r19,0b10000000
+lds r19,fix
+	eor r19,dDeciSeconds
+;sbrs dSeconds,0
+;ori r19,0b10000000
 	rcall shiftTime
 
 	out SREG,r15
@@ -363,7 +366,8 @@ init:
 	; in r16,EEDR
 	; out OSCCAL, r16
 	; nop
-
+  ldi r16, 0b10000000
+  sts fix, r16
 
 	ldi r16, (1<<WGM12|1<<CS11|1<<CS10) ;/64
 	out TCCR1B,r16
@@ -433,6 +437,64 @@ init:
 	rcall shiftBoth
 
 
+
+
+
+	clr dTenHours
+	clr dHours
+	clr dTenMinutes
+	clr dMinutes
+	clr dTenSeconds
+	clr dSeconds
+	clr dDeciSeconds
+	clr dCentiSeconds
+
+
+	ldi r18,$08
+	ldi r19,10
+	rcall shiftDate
+	ldi r18,$07
+	ldi r19,10
+	rcall shiftDate
+	ldi r18,$06
+	ldi r19,10
+	rcall shiftDate
+	ldi r18,$05
+	ldi r19,10 +0b10000000
+	rcall shiftDate
+	ldi r18,$04
+	ldi r19,10
+	rcall shiftDate
+	ldi r18,$03
+	ldi r19,10 +0b10000000
+	rcall shiftDate
+	ldi r18,$02
+	ldi r19,10
+;or r19,dGMT
+	rcall shiftDate
+	ldi r18,$01
+	ldi r19,10
+;or r19,dBST
+	rcall shiftDate
+
+	ldi r18,$08
+	ldi r19,10
+	rcall shiftTime
+	ldi r18,$07
+	ldi r19,10
+	rcall shiftTime
+	ldi r18,$06
+	ldi r19,10
+	rcall shiftTime
+	ldi r18,$05
+	ldi r19,10
+	rcall shiftTime
+	ldi r18,$04
+	ldi r19,10
+	rcall shiftTime
+	ldi r18,$03
+	ldi r19,10
+	rcall shiftTime
 
 
 //////////////////////////
@@ -536,6 +598,8 @@ main:
 	rcall receiveByte
 
 	rcall receiveByte
+	cpi r20, ','
+	breq main
 	andi r20,$0F
 	sts tenHours,r20
 	
@@ -571,6 +635,15 @@ main:
 	sts centiSeconds,r20
 
 	rcall waitForComma	; end of milliseconds
+
+	rcall receiveByte
+	cpi r20, 'A'
+	brne noFixYet
+	lds r20,fix
+	ldi r21,0b10000000
+	eor r20,r21
+	sts fix,r20
+noFixYet:
 
 	rcall waitForComma	; status
 	rcall waitForComma	; latitude
