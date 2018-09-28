@@ -372,9 +372,9 @@ init:
 	ldi r16, (1<<WGM12|1<<CS11|1<<CS10) ;/64
 	out TCCR1B,r16
 
-	ldi r16,high(1250)
+	ldi r16,high(1249)
 	out OCR1AH,r16
-	ldi r16, low(1250)
+	ldi r16, low(1249)
 	out OCR1AL,r16
 
 	ldi r16,1<<OCIE1A
@@ -1039,43 +1039,45 @@ shiftBothLoop:
 
 ; Calibrate interpolated centiseconds to match the 1PPS output
 timingAdjust:
-  ; if deciseconds:centiseconds <5:0, overflow occured. Timing is fast, increase OCR
-  ; if deciseconds:centiseconds <9:9, running slow, decrease OCR
-  ; exactly 9:9 - cutting it a bit fine, better slow it down by one
 
 push ZH
 push ZL
+  clr ZH
+  out TCNT1H,ZH
+  out TCNT1L,ZH
 
   cpi dDeciSeconds, 5
-  brcs timingFast
+  brcc timingSlow
 
-  ldi ZH, 9
-  cp dCentiSeconds, ZH
-  cpc dDeciSeconds, ZH
-  brcs timingSlow
-
-;rjmp timingAdjEnd
 
 timingFast:
   in ZL, OCR1AL
   in ZH, OCR1AH
   adiw ZH : ZL, 1
-  rjmp timingAdjApply
+  out OCR1AH, ZH
+  out OCR1AL, ZL
+  ldi dDeciSeconds,0 
+  ldi dCentiSeconds,0
+
+  pop ZL
+  pop ZH
+  out SREG, r15
+  reti
 
 
 timingSlow:
   in ZL, OCR1AL
   in ZH, OCR1AH
   sbiw ZH : ZL, 1
-
-timingAdjApply:
-
   out OCR1AH, ZH
   out OCR1AL, ZL
-
-timingAdjEnd:
   ldi dDeciSeconds,9 
   ldi dCentiSeconds,9
+
+
+  ldi ZH, 1<<OCF0A
+  out TIFR, ZH
+
 pop ZL
 pop ZH
 rjmp rollover
