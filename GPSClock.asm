@@ -1,5 +1,73 @@
 .include "tn4313def.inc"
 
+//////////////
+#define DEBUGx
+
+#define LONDON
+//////////////
+
+
+
+
+
+#define JANUARY   1
+#define FEBRUARY  2
+#define MARCH     3
+#define APRIL     4
+#define MAY       5
+#define JUNE      6
+#define JULY      7
+#define AUGUST    8
+#define SEPTEMBER 9
+#define OCTOBER   10
+#define NOVEMBER  11
+#define DECEMBER  12
+
+#define LAST_SUNDAY   101
+#define LAST_FRIDAY   102
+#define FIRST_SUNDAY  103
+#define SECOND_SUNDAY 104
+
+
+
+#ifdef LONDON
+  #define BASE_TZ_OFFSET     0
+  #define DST_START_MONTH    MARCH
+  #define DST_START_DAY      LAST_SUNDAY
+  #define DST_END_MONTH      OCTOBER
+  #define DST_END_DAY        LAST_SUNDAY
+#endif
+
+#ifdef US_EASTERN
+  #define BASE_TZ_OFFSET     -5
+  #define DST_START_MONTH    MARCH
+  #define DST_START_DAY      SECOND_SUNDAY
+  #define DST_END_MONTH      NOVEMBER
+  #define DST_END_DAY        FIRST_SUNDAY
+#endif
+
+#ifdef US_PACIFIC 
+  #define BASE_TZ_OFFSET     -8
+  #define DST_START_MONTH    MARCH
+  #define DST_START_DAY      SECOND_SUNDAY
+  #define DST_END_MONTH      NOVEMBER
+  #define DST_END_DAY        FIRST_SUNDAY
+#endif
+
+#ifdef NEWZEALAND
+  #define BASE_TZ_OFFSET     +12
+  #define DST_START_MONTH    SEPTEMBER
+  #define DST_START_DAY      LAST_SUNDAY
+  #define DST_END_MONTH      APRIL
+  #define DST_END_DAY        FIRST_SUNDAY
+#endif
+
+
+
+
+
+
+
 
 
 .def dCentiSeconds = r22
@@ -499,62 +567,63 @@ init:
 
 
 //////////////////////////
-/*
-	ldi r16,1
-	sts tenYears,r16
-	ldi r16,6  +0b10000000
-	sts years,r16
-	ldi r16,0
-	sts tenMonths,r16
-	ldi r16,5  +0b10000000
-	sts months,r16
-	ldi r16,3
-	sts tenDays,r16
-	ldi r16,1
-	sts days,r16
-	ldi r16,2
-	sts tenHours,r16
-	ldi r16,3
-	sts hours,r16
-	ldi r16,4
-	sts tenMinutes,r16
-	ldi r16,9
-	sts minutes,r16
-	ldi r16,5
-	sts tenSeconds,r16
-	ldi r16,5 +0b10000000
-	sts seconds,r16
-	ldi r16,5
-	sts deciSeconds,r16
-	ldi r16,5
-	sts centiSeconds,r16
+#ifdef DEBUG
+
+			ldi r16,1
+			sts tenYears,r16
+			ldi r16,6  +0b10000000
+			sts years,r16
+			ldi r16,1
+			sts tenMonths,r16
+			ldi r16,2  +0b10000000
+			sts months,r16
+			ldi r16,3
+			sts tenDays,r16
+			ldi r16,1
+			sts days,r16
+			ldi r16,2
+			sts tenHours,r16
+			ldi r16,3
+			sts hours,r16
+			ldi r16,4
+			sts tenMinutes,r16
+			ldi r16,9
+			sts minutes,r16
+			ldi r16,5
+			sts tenSeconds,r16
+			ldi r16,5 +0b10000000
+			sts seconds,r16
+			ldi r16,5
+			sts deciSeconds,r16
+			ldi r16,5
+			sts centiSeconds,r16
 
 
-	
-	lds r20, tenMonths
+			
+			lds r20, tenMonths
 
-	ldi r21,10
-	clr fullMonths
-	sbrc r20,0
-	mov fullMonths,r21
+			ldi r21,10
+			clr fullMonths
+			sbrc r20,0
+			mov fullMonths,r21
 
-	lds r20, months
-	andi r20,$0F
-	add fullMonths,r20
+			lds r20, months
+			andi r20,$0F
+			add fullMonths,r20
 
-	lds r20,tenYears
+			lds r20,tenYears
 
-	clr fullYears
-yearLoop2:
-	add fullYears,r21
-	dec r20
-	brne yearLoop2
+			clr fullYears
+		yearLoop2:
+			add fullYears,r21
+			dec r20
+			brne yearLoop2
 
-	lds r20,years
-	andi r20,$0F
-	add fullYears,r20
-	
-*/
+			lds r20,years
+			andi r20,$0F
+			add fullYears,r20
+		
+#endif
 
 ////////////////////
 
@@ -567,7 +636,9 @@ main:
 
 
 //////////////
-//rjmp temp
+#ifdef DEBUG
+		rjmp debugSkipUART
+#endif
 ///////////////
 
 
@@ -696,7 +767,7 @@ yearLoop:
 
 
 ///////////////////////////
-//				temp:
+				debugSkipUART:
 /////////////////////////////
 
 cli
@@ -734,27 +805,32 @@ noLeap:
 ;	lds dCentiSeconds,centiSeconds
 
 
+// DST enabled ?
 	sbic PIND,6
 	rjmp sendAll
 
 
-	ldi ZH,high(March*2)
-	ldi ZL, low(March*2-15)
+//////////////////////// Northern Hemisphere
+
+#if (DST_START_MONTH < DST_END_MONTH)
+
+	ldi ZH,high(DSTStartMonth*2)
+	ldi ZL, low(DSTStartMonth*2-15)
 	add ZL, fullYears
 
-	ldi r20, 3
+	ldi r20, DST_START_MONTH
 	cp fullMonths,r20
-	breq isMarch
+	breq isDSTStartMonth
 	brcs sendAll
 	
-	ldi r20, 10
+	ldi r20, DST_END_MONTH
 	cp fullMonths,r20
-	breq isOctober
+	breq isDSTEndMonth
 	brcc sendAll
 
 	rjmp addHour
 
-isMarch:
+isDSTStartMonth:
 	mov r21,dTenDays
 	swap r21
 	or r21,dDays
@@ -767,8 +843,8 @@ isMarch:
 	; is bst.
 	rjmp addHour
 
-isOctober:
-	subi ZL, (March-October)*2
+isDSTEndMonth:
+	subi ZL, (DSTStartMonth-DSTEndMonth)*2
 	lpm r20,Z
 	mov r21,dTenDays
 	swap r21
@@ -796,6 +872,73 @@ isLastDayDST:
 	cpi dHours,0
 	brne sendAll
 	rjmp addHour
+
+//////////////////////// Southern Hemisphere
+#else
+
+	ldi ZH,high(DSTStartMonth*2)
+	ldi ZL, low(DSTStartMonth*2-15)
+	add ZL, fullYears
+
+	ldi r20, DST_START_MONTH
+	cp fullMonths,r20
+	breq isDSTStartMonth
+	brcs PC+2 
+	rjmp addHour
+	
+	ldi r20, DST_END_MONTH
+	cp fullMonths,r20
+	breq isDSTEndMonth
+	brcc PC+2
+	rjmp addHour
+
+	rjmp sendAll
+
+isDSTStartMonth:
+	mov r21,dTenDays
+	swap r21
+	or r21,dDays
+	lpm r20,Z
+
+	cp r21,r20
+	brcs sendAll
+	breq isFirstDayDST
+
+	; is bst.
+	rjmp addHour
+
+isDSTEndMonth:
+	subi ZL, (DSTStartMonth-DSTEndMonth)*2
+	lpm r20,Z
+	mov r21,dTenDays
+	swap r21
+	or r21,dDays
+
+	cp r21,r20
+	breq isLastDayDST
+	brcc sendAll
+
+
+	;is bst
+	rjmp addHour
+
+isFirstDayDST:
+	ldi r20,0
+	cpi dHours,0
+	cpc dTenHours,r20
+	breq sendAll
+	rjmp addHour
+	
+
+isLastDayDST:
+	cpi dTenHours,0
+	brne sendAll
+	cpi dHours,0
+	brne sendAll
+	rjmp addHour
+
+#endif
+
 
 
 sendAll:
@@ -919,6 +1062,12 @@ overflowB10:
 	inc dMonths
 	cp dMonths,r18
 	breq overflowB11
+
+	ldi r18,3 + 0b10000000
+	ldi r19, 1
+	cp dMonths, r18
+	cpc dTenMonths, r19
+	breq overflowB12
 	rjmp sendAll2
 	
 overflowB11:
@@ -927,8 +1076,21 @@ overflowB11:
 	inc dTenMonths
 	rjmp sendAll2
 
+overflowB12:
+	ldi r19, 1 + 0b10000000
+	mov dMonths,r19
+	clr dTenMonths
+	inc dYears
+	ldi r18, 10 + 0b10000000
+	cp dYears, r18
+	breq overflowB13
+	rjmp sendAll2
 
-
+overflowB13:
+	ldi r19,0b10000000
+	mov dYears,r19
+	inc dTenYears
+	rjmp sendAll2
 
 
 
@@ -1089,10 +1251,44 @@ rjmp rollover
 monthLookup:
 .db 0,$31,$28,$31,$30,$31,$30,$31,$31,$30,$31,$30,$31
 
-; DST dates starting from 2015
+; DST dates starting from 2015, BCD
 
-March:
-.db $29,$27,$26,$25,$31,$29,$28,$27,$26,$31,$30,$29,$28,$26,$25,$31,$30,$28,$27,$26,$25,$30,$29,$28,$27,$25,$31,$30,$29,$27,$26,$25,$31,$29,$28,$27,$26,$31,$30,$29,$28,$26,$25,$31,$30,$28,$27,$26,$25,$30,$29,$28,$27,$25,$31,$30,$29,$27,$26,$25,$31,$29,$28,$27,$26,$31,$30,$29,$28,$26,$25,$31,$30,$28,$27,$26,$25,$30,$29,$28,$27,$25,$31,$30,$29
+;;;;;;;;;;;;;;;;;;;;;;;;;; Starts ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-October:
-.db $25,$30,$29,$28,$27,$25,$31,$30,$29,$27,$26,$25,$31,$29,$28,$27,$26,$31,$30,$29,$28,$26,$25,$31,$30,$28,$27,$26,$25,$30,$29,$28,$27,$25,$31,$30,$29,$27,$26,$25,$31,$29,$28,$27,$26,$31,$30,$29,$28,$26,$25,$31,$30,$28,$27,$26,$25,$30,$29,$28,$27,$25,$31,$30,$29,$27,$26,$25,$31,$29,$28,$27,$26,$31,$30,$29,$28,$26,$25,$31,$30,$28,$27,$26,$25
+; UK
+#if (DST_START_MONTH==MARCH && DST_START_DAY==LAST_SUNDAY)
+    DSTStartMonth:
+    .db $29,$27,$26,$25,$31,$29,$28,$27,$26,$31,$30,$29,$28,$26,$25,$31,$30,$28,$27,$26,$25,$30,$29,$28,$27,$25,$31,$30,$29,$27,$26,$25,$31,$29,$28,$27,$26,$31,$30,$29,$28,$26,$25,$31,$30,$28,$27,$26,$25,$30,$29,$28,$27,$25,$31,$30,$29,$27,$26,$25,$31,$29,$28,$27,$26,$31,$30,$29,$28,$26,$25,$31,$30,$28,$27,$26,$25,$30,$29,$28,$27,$25,$31,$30,$29
+#endif
+
+; United States
+#if (DST_START_MONTH==MARCH && DST_START_DAY==SECOND_SUNDAY)
+    DSTStartMonth:
+    .db $08,$13,$12,$11,$10,$08,$14,$13,$12,$10,$09,$08,$14,$12,$11,$10,$09,$14,$13,$12,$11,$09,$08,$14,$13,$11,$10,$09,$08,$13,$12,$11,$10,$08,$14,$13,$12,$10,$09,$08,$14,$12,$11,$10,$09,$14,$13,$12,$11,$09,$08,$14,$13,$11,$10,$09,$08,$13,$12,$11,$10,$08,$14,$13,$12,$10,$09,$08,$14,$12,$11,$10,$09,$14,$13,$12,$11,$09,$08,$14,$13,$11,$10,$09,$08
+#endif
+
+; New Zealand
+#if (DST_START_MONTH==SEPTEMBER && DST_START_DAY==LAST_SUNDAY)
+    DSTStartMonth:
+    .db $27,$25,$24,$30,$29,$27,$26,$25,$24,$29,$28,$27,$26,$24,$30,$29,$28,$26,$25,$24,$30,$28,$27,$26,$25,$30,$29,$28,$27,$25,$24,$30,$29,$27,$26,$25,$24,$29,$28,$27,$26,$24,$30,$29,$28,$26,$25,$24,$30,$28,$27,$26,$25,$30,$29,$28,$27,$25,$24,$30,$29,$27,$26,$25,$24,$29,$28,$27,$26,$24,$30,$29,$28,$26,$25,$24,$30,$28,$27,$26,$25,$30,$29,$28,$27
+#endif
+
+;;;;;;;;;;;;;;;;;;;;;;;;;; Ends ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+; UK
+#if (DST_END_MONTH==OCTOBER && DST_END_DAY==LAST_SUNDAY)
+    DSTEndMonth:
+    .db $25,$30,$29,$28,$27,$25,$31,$30,$29,$27,$26,$25,$31,$29,$28,$27,$26,$31,$30,$29,$28,$26,$25,$31,$30,$28,$27,$26,$25,$30,$29,$28,$27,$25,$31,$30,$29,$27,$26,$25,$31,$29,$28,$27,$26,$31,$30,$29,$28,$26,$25,$31,$30,$28,$27,$26,$25,$30,$29,$28,$27,$25,$31,$30,$29,$27,$26,$25,$31,$29,$28,$27,$26,$31,$30,$29,$28,$26,$25,$31,$30,$28,$27,$26,$25
+#endif
+
+; United States
+#if (DST_END_MONTH==NOVEMBER && DST_END_DAY==FIRST_SUNDAY)
+    DSTEndMonth:
+    .db $01,$06,$05,$04,$03,$01,$07,$06,$05,$03,$02,$01,$07,$05,$04,$03,$02,$07,$06,$05,$04,$02,$01,$07,$06,$04,$03,$02,$01,$06,$05,$04,$03,$01,$07,$06,$05,$03,$02,$01,$07,$05,$04,$03,$02,$07,$06,$05,$04,$02,$01,$07,$06,$04,$03,$02,$01,$06,$05,$04,$03,$01,$07,$06,$05,$03,$02,$01,$07,$05,$04,$03,$02,$07,$06,$05,$04,$02,$01,$07,$06,$04,$03,$02,$01
+#endif
+
+; New Zealand
+#if (DST_END_MONTH==APRIL && DST_END_DAY==FIRST_SUNDAY)
+    DSTEndMonth:
+    .db $05,$03,$02,$01,$07,$05,$04,$03,$02,$07,$06,$05,$04,$02,$01,$07,$06,$04,$03,$02,$01,$06,$05,$04,$03,$01,$07,$06,$05,$03,$02,$01,$07,$05,$04,$03,$02,$07,$06,$05,$04,$02,$01,$07,$06,$04,$03,$02,$01,$06,$05,$04,$03,$01,$07,$06,$05,$03,$02,$01,$07,$05,$04,$03,$02,$07,$06,$05,$04,$02,$01,$07,$06,$04,$03,$02,$01,$06,$05,$04,$03,$01,$07,$06,$05
+#endif
