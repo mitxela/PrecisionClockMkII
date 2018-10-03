@@ -107,9 +107,10 @@ overflow2:
 	
 	clr dDeciSeconds
 	ldi r18,$02
-	mov r19,dDeciSeconds
-sbrs dSeconds,0
-ori r19,0b10000000
+lds r19,fix
+	eor r19,dDeciSeconds
+; sbrs dSeconds,0
+; ori r19,0b10000000
 	rcall shiftTime
 
 	inc dSeconds
