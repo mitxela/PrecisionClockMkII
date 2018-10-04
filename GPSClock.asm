@@ -3,7 +3,7 @@
 //////////////
 #define DEBUGx
 
-#define LONDON
+#define NEWZEALAND
 //////////////
 
 
@@ -55,7 +55,7 @@
 #endif
 
 #ifdef NEWZEALAND
-  #define BASE_TZ_OFFSET     +12
+  #define BASE_TZ_OFFSET     12
   #define DST_START_MONTH    SEPTEMBER
   #define DST_START_DAY      LAST_SUNDAY
   #define DST_END_MONTH      APRIL
@@ -67,6 +67,12 @@
 
 
 
+
+#if (DST_START_MONTH < DST_END_MONTH)
+	#define NORTHERN_HEMISPHERE
+#else
+	#define SOUTHERN_HEMISPHERE
+#endif
 
 
 
@@ -94,6 +100,7 @@
 .def dGMT = r9
 .def dBST = r10
 
+.def daysInLastMonth = r11	;BCD
 
 .dseg
 
@@ -778,7 +785,27 @@ cli
 	add ZL, fullMonths
 	lpm daysInMonth,Z
 
+#if (BASE_TZ_OFFSET < 0)
+	dec ZL	; in the case of January, December is repeated at the start
+	lpm daysInLastMonth,Z
 
+	mov r20,fullYears
+	andi r20, 0b11111100
+	cp r20,fullYears
+	brne noLeap
+
+	ldi r20,2
+	cp fullMonths,r20
+	brne notFebThisMonth
+	inc daysInMonth
+notFebThisMonth:
+	cpi ZL, low(monthLookup*2 +2)
+	brne noLeap
+	inc daysInLastMonth
+
+noLeap:
+
+#else
 	ldi r20,2
 	cp fullMonths,r20
 	brne noLeap
@@ -788,6 +815,7 @@ cli
 	brne noLeap
 	inc daysInMonth
 noLeap:
+#endif
 
 	lds dTenYears,tenYears
 	lds dYears,years
@@ -812,7 +840,7 @@ noLeap:
 
 //////////////////////// Northern Hemisphere
 
-#if (DST_START_MONTH < DST_END_MONTH)
+#ifdef NORTHERN_HEMISPHERE
 
 	ldi ZH,high(DSTStartMonth*2)
 	ldi ZL, low(DSTStartMonth*2-15)
@@ -940,6 +968,7 @@ isLastDayDST:
 #endif
 
 
+#if (BASE_TZ_OFFSET==0)
 
 sendAll:
 	ldi r20,0b10000000
@@ -993,17 +1022,6 @@ or r19,dBST
 	ldi r18,$03
 	mov r19,dSeconds
 	rcall shiftTime
-	;ldi r18,$02
-	;mov r19,dDeciSeconds
-	;rcall shiftTime
-
-
-
-
-//////////////
-//sei rjmp PC
-///////////
-
 
 rjmp main
 
@@ -1063,6 +1081,119 @@ overflowB10:
 	cp dMonths,r18
 	breq overflowB11
 
+; In the southern hemisphere, DST covers new year
+#ifdef SOUTHERN_HEMISPHERE
+	ldi r18,3 + 0b10000000
+	ldi r19, 1
+	cp dMonths, r18
+	cpc dTenMonths, r19
+	breq overflowB12
+#endif
+
+	rjmp sendAll2
+	
+overflowB11:
+	ldi r19,0b10000000
+	mov dMonths,r19
+	inc dTenMonths
+	rjmp sendAll2
+
+overflowB12:
+	ldi r19, 1 + 0b10000000
+	mov dMonths,r19
+	clr dTenMonths
+	inc dYears
+	ldi r18, 10 + 0b10000000
+	cp dYears, r18
+	breq overflowB13
+	rjmp sendAll2
+
+overflowB13:
+	ldi r19,0b10000000
+	mov dYears,r19
+	inc dTenYears
+	rjmp sendAll2
+
+#endif
+
+
+
+#if (BASE_TZ_OFFSET > 0)
+
+sendAll:
+	ldi r20,0b10000000
+	mov dGMT,r20
+	clr dBST
+	ldi r20, BASE_TZ_OFFSET
+
+sendAll3:
+	
+
+add r20, dHours
+cpi dTenHours, 2
+brne PC+2
+subi r20, -20
+cpi dTenHours, 1
+brne PC+2
+subi r20, -10
+
+clr dTenHours
+
+
+cpi r20, 24
+brcc saNextDay
+
+
+saFullHours0:
+	subi r20, 10
+	brcs saFullHours1
+	inc dTenHours
+	rjmp saFullHours0
+saFullHours1:
+	subi r20,-10
+	mov dHours, r20
+	rjmp sendAll2
+
+saNextDay:
+	subi r20,24
+saFullHours2:
+	subi r20, 10
+	brcs saFullHours3
+	inc dTenHours
+	rjmp saFullHours2
+saFullHours3:
+	subi r20,-10
+	mov dHours, r20
+
+
+	mov r18,dTenDays
+	swap r18
+
+	or r18,dDays
+	cp daysInMonth,r18
+	breq overflowB10
+
+	inc dDays
+	ldi r18,10
+	cp dDays,r18
+	breq overflowB9
+	rjmp sendAll2
+
+overflowB9:
+	clr dDays
+	inc dTenDays
+	rjmp sendAll2
+
+overflowB10:
+	clr dTenDays
+	ldi r18,$01
+	mov dDays,r18
+
+	ldi r18,10 + 0b10000000
+	inc dMonths
+	cp dMonths,r18
+	breq overflowB11
+
 	ldi r18,3 + 0b10000000
 	ldi r19, 1
 	cp dMonths, r18
@@ -1091,6 +1222,80 @@ overflowB13:
 	mov dYears,r19
 	inc dTenYears
 	rjmp sendAll2
+
+
+
+
+sendAll2:
+
+
+
+	ldi r18,$08
+	ldi r19,2
+	rcall shiftDate
+	ldi r18,$07
+	ldi r19,0
+	rcall shiftDate
+	ldi r18,$06
+	mov r19,dTenYears
+	rcall shiftDate
+	ldi r18,$05
+	mov r19,dYears
+	rcall shiftDate
+	ldi r18,$04
+	mov r19,dTenMonths
+	rcall shiftDate
+	ldi r18,$03
+	mov r19,dMonths
+	rcall shiftDate
+	ldi r18,$02
+	mov r19,dTenDays
+or r19,dGMT
+	rcall shiftDate
+	ldi r18,$01
+	mov r19,dDays
+or r19,dBST
+	rcall shiftDate
+
+	ldi r18,$08
+	mov r19,dTenHours
+	rcall shiftTime
+	ldi r18,$07
+	mov r19,dHours
+	rcall shiftTime
+	ldi r18,$06
+	mov r19,dTenMinutes
+	rcall shiftTime
+	ldi r18,$05
+	mov r19,dMinutes
+	rcall shiftTime
+	ldi r18,$04
+	mov r19,dTenSeconds
+	rcall shiftTime
+	ldi r18,$03
+	mov r19,dSeconds
+	rcall shiftTime
+
+rjmp main
+
+
+
+addHour:
+
+	ldi r20,0b10000000
+	mov dBST,r20
+	clr dGMT
+
+	ldi r20, BASE_TZ_OFFSET+1
+
+	rjmp sendAll3
+
+
+
+#endif
+
+
+
 
 
 
@@ -1249,7 +1454,8 @@ rjmp rollover
 
 .org (768)
 monthLookup:
-.db 0,$31,$28,$31,$30,$31,$30,$31,$31,$30,$31,$30,$31
+; 0 = december, 1 = january ... 12 = december
+.db $31,$31,$28,$31,$30,$31,$30,$31,$31,$30,$31,$30,$31
 
 ; DST dates starting from 2015, BCD
 
