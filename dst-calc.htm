@@ -1,8 +1,20 @@
 <form onchange='recalc();'>
 
+<select id=f4>
+<option value=-1>[]</option>
+<option value=0>Sunday before</option>
+<option value=1>Monday before</option>
+<option value=2>Tuesday before</option>
+<option value=3>Wednesday before</option>
+<option value=4>Thursday before</option>
+<option value=5>Friday before</option>
+<option value=6>Saturday before</option>
+</select>
 <select id=f1>
 <option>First</option>
 <option>Second</option>
+<option>Third</option>
+<option>Fourth</option>
 <option>Last</option>
 </select>
 <select id=f2>
@@ -32,37 +44,115 @@
 </form>
 <pre></pre>
 <script>
+daynames=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"]
 
-function recalc(){
+Starts=[
+  [" Mexico ","First Sunday April"],
+  [" Brazil ","First Sunday November"],
+  [" Australia ","First Sunday October"],
+  [" Jordan ","Last Friday March"],
+  [" United Kingdom ","Last Sunday March"],
+  [" New Zealand ","Last Sunday September"],
+  [" Chile ","Second Sunday August"],
+  [" United States ","Second Sunday March"],
+  [" Israel ","Last Sunday March", "Friday before"],
+  [" Greenland (DK) ","Last Sunday March", "Saturday before"]
+];
 
-  out=[];
-  nday =      f1.value;
-  targetday = f2.value;
-  month =     f3.value;
+
+Ends=[
+  [" New Zealand, Australia","First Sunday April"],
+  [" United States ","First Sunday November"],
+  [" Paraguay ","Fourth Sunday March"],
+  [" Jordan ","Last Friday October"],
+  [" United Kingdom ","Last Sunday October"],
+  [" Chile ","Second Sunday May"],
+  [" Brazil ","Third Sunday February"],
+  [" Fiji ","Third Sunday January"],
+  [" Greenland (DK) ","Last Sunday October", "Saturday before"]
+];
+
+
+
+
+function generate( nday, targetday, month, before ){
+  
+  var out=[];
 
   for (year = 2015; year<=2099;year++){
 
     //hax
-    daysInMonth = new Date(year, f3.selectedIndex+1, 0).getDate();
+    daysInMonth = new Date(year, 1+["January","February","March","April","May","June","July","August","September","October","November","December"].indexOf(month), 0).getDate();
 
     daylist=[];
     for (day=1;day<=daysInMonth;day++) {
       d = new Date(day+" "+month+" "+year).getDay();
-      if (d==targetday) daylist.push(day);
+      if (d==targetday) {
+        daylist.push(day);
+      }
     }
+
+
+
     if (nday=="First")
-      out.push( bcd(daylist[0]) );
+      out.push( bcd(daylist[0], before) );
     else if (nday=="Second")
-      out.push( bcd(daylist[1]) );
-    else if (nday=="Last")
-      out.push( bcd(daylist[daylist.length-1]) );
+      out.push( bcd(daylist[1], before) );
+    else if (nday=="Third")
+      out.push( bcd(daylist[2], before) );
+    else if (nday=="Fourth")
+      out.push( bcd(daylist[3], before) );
+    else if (nday=="Last") {
+
+      if (before>=0 &&before<=6){
+        for (var d=targetday, bday=daylist[daylist.length-1]; d !=before; ) {
+          bday--;
+          d = new Date(bday+" "+month+" "+year).getDay();
+        }
+        out.push(bcd(bday))
+      } else
+        out.push( bcd(daylist[daylist.length-1]) );
+    }
 
     
   }
 
-  document.querySelector('pre').innerHTML= '.db '+out.join()+"\n"
+  return '.db '+ out.join()+"\n"
 
 }
-function bcd(a) {return '$'+('0'+a).substr(-2)}
-recalc()
+function recalc(){ document.querySelector('pre').innerHTML= generate(f1.value,f2.value,f3.value, f4.value) }
+function bcd(a) {
+  return '$'+('0'+a).substr(-2)
+}
+//recalc()
+
+uniqs={}
+
+function tables( t, def,label){
+  for (var i=0;i<t.length;i++){
+    var A = t[i][1].split(" ")[0];
+    var B = t[i][1].split(" ")[1];
+    var C = t[i][1].split(" ")[2];
+    var D = (t[i].length==3) ? t[i][2].replace(/ /g,'_').toUpperCase()+"_":"";
+    out+=";"+t[i][0]
+       +"\n#if (DST_"+def+"_MONTH=="+C.toUpperCase()+" && DST_"+def+"_DAY=="+D+A.toUpperCase()+"_"+B.toUpperCase()+")\n"
+       +label+"  "
+       + generate(A,daynames.indexOf(B),C, t[i].length==3?daynames.indexOf(t[i][2].split(" ")[0]):-1)
+       +"#endif\n\n";
+
+    uniqs[D+A.toUpperCase()+"_"+B.toUpperCase()]=1;
+  }
+}
+out=""
+
+out+=";;;;;;;;;;;;;;;;;;;;;;;;;; Starts ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;\n";
+tables(Starts,"START", "  DSTStartMonth:\n")
+out+="\n\n;;;;;;;;;;;;;;;;;;;;;;;;;;; Ends ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;\n";
+tables(Ends,"END", "  DSTEndMonth:\n")
+
+out+="\n\n"
+j=100;
+for (var i in uniqs) out+="#define "+i+" "+(j++)+"\n"
+
+document.querySelector('pre').innerHTML=out;
 </script>
