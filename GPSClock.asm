@@ -1,9 +1,16 @@
 .include "tn4313def.inc"
 
 //////////////
-#define DEBUGx
+// #define DEBUG
+//////////////
+// Permanent DST / use jumper for manual DST control
+// #define PERMA_DST
+//////////////
+// 
+// #define BASE_TZ_OFFSET     0
 
-#define NEWZEALAND
+#define LONDON
+
 //////////////
 
 
@@ -69,14 +76,13 @@
 
 
 
-
-
-#if (DST_START_MONTH < DST_END_MONTH)
-	#define NORTHERN_HEMISPHERE
-#else
-	#define SOUTHERN_HEMISPHERE
+#ifndef PERMA_DST
+	#if (DST_START_MONTH < DST_END_MONTH)
+		#define NORTHERN_HEMISPHERE
+	#else
+		#define SOUTHERN_HEMISPHERE
+	#endif
 #endif
-
 
 
 .def dCentiSeconds = r22
@@ -581,19 +587,19 @@ init:
 
 			ldi r16,1
 			sts tenYears,r16
-			ldi r16,6  +0b10000000
+			ldi r16,8  +0b10000000
 			sts years,r16
-			ldi r16,1
+			ldi r16,0
 			sts tenMonths,r16
-			ldi r16,2  +0b10000000
+			ldi r16,1  +0b10000000
 			sts months,r16
-			ldi r16,3
+			ldi r16,0
 			sts tenDays,r16
 			ldi r16,1
 			sts days,r16
-			ldi r16,2
+			ldi r16,0
 			sts tenHours,r16
-			ldi r16,3
+			ldi r16,0
 			sts hours,r16
 			ldi r16,4
 			sts tenMinutes,r16
@@ -646,9 +652,9 @@ main:
 
 
 //////////////
-#ifdef DEBUG
-		rjmp debugSkipUART
-#endif
+#ifndef DEBUG
+
+
 ///////////////
 
 
@@ -777,7 +783,13 @@ yearLoop:
 
 
 ///////////////////////////
-				debugSkipUART:
+#else
+nop
+nop
+nop
+nop
+nop
+#endif
 /////////////////////////////
 
 cli
@@ -840,6 +852,9 @@ noLeap:
 	sbic PIND,6
 	rjmp sendAll
 
+#ifdef PERMA_DST
+	rjmp addHour
+#else
 
 //////////////////////// Northern Hemisphere
 
@@ -969,8 +984,10 @@ isLastDayDST:
 	rjmp addHour
 
 #endif
+#endif
 
 
+//////////////////////// GMT / original DST code
 #if (BASE_TZ_OFFSET==0)
 
 sendAll:
@@ -1120,7 +1137,7 @@ overflowB13:
 #endif
 
 
-
+//////////////////////// Eastern Hemisphere
 #if (BASE_TZ_OFFSET > 0)
 
 sendAll:
@@ -1224,7 +1241,7 @@ overflowB13:
 	ldi r19,0b10000000
 	mov dYears,r19
 	inc dTenYears
-	rjmp sendAll2
+;	rjmp sendAll2
 
 
 
@@ -1297,6 +1314,194 @@ addHour:
 
 #endif
 
+
+//////////////////////// Western Hemisphere
+#if (BASE_TZ_OFFSET < 0)
+
+sendAll:
+	ldi r20,0b10000000
+	mov dGMT,r20
+	clr dBST
+	ldi r20, BASE_TZ_OFFSET
+
+sendAll3:
+	
+
+add r20, dHours
+cpi dTenHours, 2
+brne PC+2
+subi r20, -20
+cpi dTenHours, 1
+brne PC+2
+subi r20, -10
+
+clr dTenHours
+
+
+tst r20
+brmi saPrevDay
+
+
+saFullHours0:
+	subi r20, 10
+	brcs saFullHours1
+	inc dTenHours
+	rjmp saFullHours0
+saFullHours1:
+	subi r20,-10
+	mov dHours, r20
+	rjmp sendAll2
+
+
+saPrevDay:
+	subi r20,-24
+saFullHours2:
+	subi r20, 10
+	brcs saFullHours3
+	inc dTenHours
+	rjmp saFullHours2
+saFullHours3:
+	subi r20,-10
+	mov dHours, r20
+
+
+	dec dDays
+	breq underflowB0
+	brmi underflowB2
+	rjmp sendAll2
+
+underflowB0:
+	tst dTenDays
+	breq underflowB1
+	rjmp sendAll2
+
+underflowB2:
+	dec dTenDays
+	ldi r18,9
+	mov dDays, r18
+	rjmp sendAll2
+
+underflowB1:
+	ldi r18,$0F
+	mov dDays, daysInLastMonth
+	and dDays, r18
+	mov dTenDays, daysInLastMonth
+	swap dTenDays
+	and dTenDays, r18
+
+
+	ldi r20, 0b10000000
+
+	eor dMonths, r20
+	dec dMonths
+	breq underflowB3
+	brmi underflowB4
+	eor dMonths, r20
+	rjmp sendAll2
+
+underflowB3:
+	tst dTenMonths
+	breq underflowB5
+	eor dMonths, r20
+	rjmp sendAll2
+
+underflowB4:
+	clr dTenMonths
+	ldi r18, 9 + 0b10000000
+	mov dMonths, r18
+	rjmp sendAll2
+
+underflowB5:
+	ldi r18,2 +0b10000000
+	mov dMonths, r18
+	ldi r18,1
+	mov dTenMonths, r18
+
+
+	eor dYears, r20
+	dec dYears
+	brcs underflowB6
+	eor dYears, r20
+	rjmp sendAll2
+
+underflowB6:
+	ldi r18, 9 + 0b10000000
+	mov dYears, r18
+	dec dTenYears
+;	rjmp sendAll2
+
+
+
+
+
+
+sendAll2:
+
+
+
+	ldi r18,$08
+	ldi r19,2
+	rcall shiftDate
+	ldi r18,$07
+	ldi r19,0
+	rcall shiftDate
+	ldi r18,$06
+	mov r19,dTenYears
+	rcall shiftDate
+	ldi r18,$05
+	mov r19,dYears
+	rcall shiftDate
+	ldi r18,$04
+	mov r19,dTenMonths
+	rcall shiftDate
+	ldi r18,$03
+	mov r19,dMonths
+	rcall shiftDate
+	ldi r18,$02
+	mov r19,dTenDays
+or r19,dGMT
+	rcall shiftDate
+	ldi r18,$01
+	mov r19,dDays
+or r19,dBST
+	rcall shiftDate
+
+	ldi r18,$08
+	mov r19,dTenHours
+	rcall shiftTime
+	ldi r18,$07
+	mov r19,dHours
+	rcall shiftTime
+	ldi r18,$06
+	mov r19,dTenMinutes
+	rcall shiftTime
+	ldi r18,$05
+	mov r19,dMinutes
+	rcall shiftTime
+	ldi r18,$04
+	mov r19,dTenSeconds
+	rcall shiftTime
+	ldi r18,$03
+	mov r19,dSeconds
+	rcall shiftTime
+
+rjmp main
+
+
+
+addHour:
+
+	ldi r20,0b10000000
+	mov dBST,r20
+	clr dGMT
+
+	ldi r20, BASE_TZ_OFFSET+1
+
+	rjmp sendAll3
+
+
+
+#endif
 
 
 
