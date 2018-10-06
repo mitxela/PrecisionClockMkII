@@ -4,10 +4,12 @@
 // #define DEBUG
 //////////////
 // Permanent DST / use jumper for manual DST control
-// #define PERMA_DST
+// #define NO_DST
 //////////////
 // 
 // #define BASE_TZ_OFFSET     0
+// #define FRACTIONAL_OFFSET 45
+//
 
 #define LONDON
 
@@ -72,11 +74,33 @@
   #define DST_END_DAY        FIRST_SUNDAY
 #endif
 
+#ifdef INDIA
+  #define BASE_TZ_OFFSET     5
+  #define FRACTIONAL_OFFSET 30
+  #define NO_DST
+#endif
+
+#ifdef NEPAL
+  #define BASE_TZ_OFFSET     5
+  #define FRACTIONAL_OFFSET 45
+  #define NO_DST
+#endif
+
+// Newfoundland is -3:30, but fractional offset can only be positive
+#ifdef NEWFOUNDLAND
+  #define BASE_TZ_OFFSET     -4
+  #define FRACTIONAL_OFFSET  30
+  #define DST_START_MONTH    MARCH
+  #define DST_START_DAY      SECOND_SUNDAY
+  #define DST_END_MONTH      NOVEMBER
+  #define DST_END_DAY        FIRST_SUNDAY
+#endif
 
 
 
 
-#ifndef PERMA_DST
+
+#ifndef NO_DST
 	#if (DST_START_MONTH < DST_END_MONTH)
 		#define NORTHERN_HEMISPHERE
 	#else
@@ -852,7 +876,7 @@ noLeap:
 	sbic PIND,6
 	rjmp sendAll
 
-#ifdef PERMA_DST
+#ifdef NO_DST
 	rjmp addHour
 #else
 
@@ -1147,7 +1171,36 @@ sendAll:
 	ldi r20, BASE_TZ_OFFSET
 
 sendAll3:
-	
+
+#ifdef FRACTIONAL_OFFSET
+	#if (FRACTIONAL_OFFSET == 30)
+
+	subi dTenMinutes, -3
+	cpi dTenMinutes, 6
+	brcs fracOffEnd
+	subi dTenMinutes, 6
+	inc r20
+
+fracOffEnd:
+	#endif
+	#if (FRACTIONAL_OFFSET == 45)
+
+	subi dMinutes, -5
+	cpi dMinutes, 10
+	brcs fracOff1
+	subi dMinutes, 10
+	subi dTenMinutes, -1
+fracOff1:
+	subi dTenMinutes, -4
+	cpi dTenMinutes, 6
+	brcs fracOffEnd
+	subi dTenMinutes, 6
+	inc r20
+
+fracOffEnd:
+	#endif
+#endif
+
 
 add r20, dHours
 cpi dTenHours, 2
@@ -1325,7 +1378,36 @@ sendAll:
 	ldi r20, BASE_TZ_OFFSET
 
 sendAll3:
-	
+
+#ifdef FRACTIONAL_OFFSET
+	#if (FRACTIONAL_OFFSET == 30)
+
+	subi dTenMinutes, -3
+	cpi dTenMinutes, 6
+	brcs fracOffEnd
+	subi dTenMinutes, 6
+	inc r20
+
+fracOffEnd:
+	#endif
+	#if (FRACTIONAL_OFFSET == 45)
+
+	subi dMinutes, -5
+	cpi dMinutes, 10
+	brcs fracOff1
+	subi dMinutes, 10
+	subi dTenMinutes, -1
+fracOff1:
+	subi dTenMinutes, -4
+	cpi dTenMinutes, 6
+	brcs fracOffEnd
+	subi dTenMinutes, 6
+	inc r20
+
+fracOffEnd:
+	#endif
+#endif
+
 
 add r20, dHours
 cpi dTenHours, 2
