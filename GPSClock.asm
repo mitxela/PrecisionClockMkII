@@ -18,7 +18,6 @@
 
 
 
-
 #define JANUARY   1
 #define FEBRUARY  2
 #define MARCH     3
@@ -554,7 +553,7 @@ init:
 	clr dTenMinutes
 	clr dMinutes
 	clr dTenSeconds
-	clr dSeconds
+	ldi dSeconds, 0b10000000
 	clr dDeciSeconds
 	clr dCentiSeconds
 
