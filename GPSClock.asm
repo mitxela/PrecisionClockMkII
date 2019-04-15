@@ -747,14 +747,14 @@ main:
 
 	rcall waitForComma	; end of milliseconds
 
-	rcall receiveByte
-	cpi r20, 'A'
-	brne noFixYet
-	lds r20,fix
-	ldi r21,0b10000000
-	eor r20,r21
-	sts fix,r20
-noFixYet:
+	; rcall receiveByte
+	; cpi r20, 'A'
+	; brne noFixYet
+	; lds r20,fix
+	; ldi r21,0b10000000
+	; eor r20,r21
+	; sts fix,r20
+; noFixYet:
 
 	rcall waitForComma	; status
 	rcall waitForComma	; latitude
@@ -1702,6 +1702,11 @@ push ZL
   clr ZH
   out TCNT1H,ZH
   out TCNT1L,ZH
+
+lds ZL,fix
+ldi ZH,0b10000000
+eor ZL,ZH
+sts fix,ZL
 
   cpi dDeciSeconds, 5
   brcc timingSlow
