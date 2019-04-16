@@ -1,0 +1,36 @@
+# Timezones are extracted from the #ifdef list in the .asm file
+# To flash a given timezone, type e.g.
+#		make flash-us_eastern
+
+# Cross-platform solution is to have a different wrapper script on each machine
+# On linux /usr/bin/avrasm2 looks like:
+#		#!/bin/sh
+#		wine ~/avrasm/avrasm2.exe -I ~/avrasm $*
+
+CHIP = 4313
+
+hexes := $(shell perl -lne 'm[ifdef TZ_(\w+)] and print lc("build/$$1.hex")' GPSClock.asm)
+
+
+.PHONY: all clean fuses
+all: $(hexes)
+
+build:
+	mkdir build
+
+$(hexes): %.hex: GPSClock.asm build
+	avrasm2 -fI -i"tn$(CHIP)def.inc" \
+	-D$(shell echo "$@" | perl -lne 'm[build/(.*)\.hex] and print uc("TZ_$$1")') \
+	$< -o $@
+
+
+flash-%: build/%.hex
+	avrdude -c usbasp -p t$(CHIP) -U flash:w:$<:i
+
+flash: flash-london
+
+clean:
+	rm -rf build/
+
+fuses:
+	avrdude -p t$(CHIP) -B2000 -U lfuse:w:0xe4:m

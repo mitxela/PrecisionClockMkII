@@ -1,5 +1,3 @@
-.include "tn4313def.inc"
-
 //////////////
 // #define DEBUG
 //////////////
@@ -10,9 +8,7 @@
 // #define BASE_TZ_OFFSET     0
 // #define FRACTIONAL_OFFSET 45
 //
-
-#define LONDON
-
+// #define TZ_LONDON
 //////////////
 
 
@@ -41,7 +37,7 @@
 #define THIRD_SUNDAY 107
 
 
-#ifdef LONDON
+#ifdef TZ_LONDON
   #define BASE_TZ_OFFSET     0
   #define DST_START_MONTH    MARCH
   #define DST_START_DAY      LAST_SUNDAY
@@ -49,7 +45,7 @@
   #define DST_END_DAY        LAST_SUNDAY
 #endif
 
-#ifdef US_EASTERN
+#ifdef TZ_US_EASTERN
   #define BASE_TZ_OFFSET     -5
   #define DST_START_MONTH    MARCH
   #define DST_START_DAY      SECOND_SUNDAY
@@ -57,7 +53,7 @@
   #define DST_END_DAY        FIRST_SUNDAY
 #endif
 
-#ifdef US_PACIFIC 
+#ifdef TZ_US_PACIFIC
   #define BASE_TZ_OFFSET     -8
   #define DST_START_MONTH    MARCH
   #define DST_START_DAY      SECOND_SUNDAY
@@ -65,7 +61,7 @@
   #define DST_END_DAY        FIRST_SUNDAY
 #endif
 
-#ifdef NEWZEALAND
+#ifdef TZ_NEWZEALAND
   #define BASE_TZ_OFFSET     12
   #define DST_START_MONTH    SEPTEMBER
   #define DST_START_DAY      LAST_SUNDAY
@@ -73,20 +69,20 @@
   #define DST_END_DAY        FIRST_SUNDAY
 #endif
 
-#ifdef INDIA
+#ifdef TZ_INDIA
   #define BASE_TZ_OFFSET     5
   #define FRACTIONAL_OFFSET 30
   #define NO_DST
 #endif
 
-#ifdef NEPAL
+#ifdef TZ_NEPAL
   #define BASE_TZ_OFFSET     5
   #define FRACTIONAL_OFFSET 45
   #define NO_DST
 #endif
 
 // Newfoundland is -3:30, but fractional offset can only be positive
-#ifdef NEWFOUNDLAND
+#ifdef TZ_NEWFOUNDLAND
   #define BASE_TZ_OFFSET     -4
   #define FRACTIONAL_OFFSET  30
   #define DST_START_MONTH    MARCH
@@ -107,6 +103,11 @@
 	#endif
 #endif
 
+
+.undef XH
+.undef XL
+.undef YH
+.undef YL
 
 .def dCentiSeconds = r22
 .def dDeciSeconds = r23
