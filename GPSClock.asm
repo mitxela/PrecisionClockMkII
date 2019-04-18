@@ -154,7 +154,7 @@ tenYears: .byte 1
 
 
 fix: .byte 1
-
+fixDisplay: .byte 1
 
 
 
@@ -177,7 +177,7 @@ rollover:
 	breq overflow1
 	
 	ldi r18,$01
-lds r19, fix
+lds r19, fixDisplay
 	eor r19,dCentiSeconds
 ;sbrs dSeconds,0
 ;ori r19,0b10000000
@@ -188,9 +188,11 @@ lds r19, fix
 
 overflow1:
 
+lds r19, fix
+sts fixDisplay, r19
+
 	clr dCentiSeconds
 	ldi r18,$01
-lds r19, fix
 	eor r19,dCentiSeconds
 ;sbrs dSeconds,0
 ;ori r19,0b10000000
@@ -202,7 +204,7 @@ lds r19, fix
 	breq overflow2
 
 	ldi r18,$02
-lds r19,fix
+lds r19,fixDisplay
 	eor r19,dDeciSeconds
 ;sbrs dSeconds,0
 ;ori r19,0b10000000
@@ -215,7 +217,7 @@ overflow2:
 	
 	clr dDeciSeconds
 	ldi r18,$02
-lds r19,fix
+lds r19,fixDisplay
 	eor r19,dDeciSeconds
 ; sbrs dSeconds,0
 ; ori r19,0b10000000
