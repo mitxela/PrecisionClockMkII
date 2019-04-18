@@ -478,12 +478,12 @@ init:
   ldi r16, 0b10000000
   sts fix, r16
 
-	ldi r16, (1<<WGM12|1<<CS11|1<<CS10) ;/64
+	ldi r16, (1<<WGM12|1<<CS11) ;/8
 	out TCCR1B,r16
 
-	ldi r16,high(1249)
+	ldi r16,high(10000)
 	out OCR1AH,r16
-	ldi r16, low(1249)
+	ldi r16, low(10000)
 	out OCR1AL,r16
 
 	ldi r16,1<<OCIE1A
