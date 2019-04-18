@@ -45,6 +45,14 @@
   #define DST_END_DAY        LAST_SUNDAY
 #endif
 
+#ifdef TZ_CENTRAL_EUROPE
+  #define BASE_TZ_OFFSET     1
+  #define DST_START_MONTH    MARCH
+  #define DST_START_DAY      LAST_SUNDAY
+  #define DST_END_MONTH      OCTOBER
+  #define DST_END_DAY        LAST_SUNDAY
+#endif
+
 #ifdef TZ_US_EASTERN
   #define BASE_TZ_OFFSET     -5
   #define DST_START_MONTH    MARCH
