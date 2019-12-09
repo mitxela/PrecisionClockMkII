@@ -554,8 +554,11 @@ init:
 	out PORTB,r16
 
 	out DDRD,r16
+	out DDRA,r16
 	ldi r16, 1<<6
 	out PORTD,r16
+	ldi r16, 1<<0
+	out PORTA, r16
 
     ldi r16,0
     out UBRRH,r16
@@ -924,6 +927,10 @@ noLeap:
 ;	lds dCentiSeconds,centiSeconds
 
 
+// Backup perma-DST marker
+	sbis PINA,0
+	rjmp addHour
+
 // DST enabled ?
 	sbic PIND,6
 	rjmp sendAll
@@ -1177,14 +1184,14 @@ overflowB10:
 	cp dMonths,r18
 	breq overflowB11
 
-; In the southern hemisphere, DST covers new year
-#ifdef SOUTHERN_HEMISPHERE
+//; In the southern hemisphere, DST covers new year
+//#ifdef SOUTHERN_HEMISPHERE
 	ldi r18,3 + 0b10000000
 	ldi r19, 1
 	cp dMonths, r18
 	cpc dTenMonths, r19
 	breq overflowB12
-#endif
+//#endif
 
 	rjmp sendAll2
 	
