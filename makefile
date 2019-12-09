@@ -7,7 +7,7 @@
 #		#!/bin/sh
 #		wine ~/avrasm/avrasm2.exe -I ~/avrasm $*
 
-CHIP = 4313
+CHIP = 2313
 
 hexes := $(shell perl -lne 'm[ifdef TZ_(\w+)] and print lc("build/$$1.hex")' GPSClock.asm)
 

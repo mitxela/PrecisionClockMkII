@@ -53,6 +53,14 @@
   #define DST_END_DAY        LAST_SUNDAY
 #endif
 
+#ifdef TZ_EASTERN_EUROPE
+  #define BASE_TZ_OFFSET     2
+  #define DST_START_MONTH    MARCH
+  #define DST_START_DAY      LAST_SUNDAY
+  #define DST_END_MONTH      OCTOBER
+  #define DST_END_DAY        LAST_SUNDAY
+#endif
+
 ; Most of Atlantic time does not observe DST, but a few regions do (e.g. Bermuda)
 #ifdef TZ_US_ATLANTIC
   #define BASE_TZ_OFFSET     -4
@@ -141,7 +149,10 @@
   #define DST_END_DAY        FIRST_SUNDAY
 #endif
 
-
+#ifdef TZ_JAPAN
+  #define BASE_TZ_OFFSET     9
+  #define NO_DST
+#endif
 
 
 
