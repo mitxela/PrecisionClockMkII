@@ -1571,8 +1571,8 @@ underflowB5:
 
 
 	eor dYears, r20
+	breq underflowB6
 	dec dYears
-	brcs underflowB6
 	eor dYears, r20
 	rjmp sendAll2
 
