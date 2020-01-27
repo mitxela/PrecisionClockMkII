@@ -127,6 +127,14 @@
   #define DST_END_DAY        FIRST_SUNDAY
 #endif
 
+#ifdef TZ_AUSTRALIA_EASTERN
+  #define BASE_TZ_OFFSET     10
+  #define DST_START_MONTH    OCTOBER
+  #define DST_START_DAY      FIRST_SUNDAY
+  #define DST_END_MONTH      APRIL
+  #define DST_END_DAY        FIRST_SUNDAY
+#endif
+
 #ifdef TZ_INDIA
   #define BASE_TZ_OFFSET     5
   #define FRACTIONAL_OFFSET 30
