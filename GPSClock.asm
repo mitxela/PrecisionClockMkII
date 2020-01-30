@@ -539,13 +539,15 @@ overflow13:
 
 init:
 
-	; Load calibration byte from EEPROM
-	; clr r16
-	; out EEAR, r16
-	; sbi EECR,EERE
-	; in r16,EEDR
-	; out OSCCAL, r16
-	; nop
+	; Load calibration byte from EEPROM, if present
+	clr r16
+	out EEAR, r16
+	sbi EECR,EERE
+	in r16,EEDR
+	sbrs r16,7
+		out OSCCAL, r16
+	nop
+
   ldi r16, 0b10000000
   sts fix, r16
 

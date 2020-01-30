@@ -34,3 +34,8 @@ clean:
 
 fuses:
 	avrdude -p t$(CHIP) -B2000 -U lfuse:w:0xe4:m
+
+# EESAVE set hfuse = 0x9F
+osccal:
+	avrasm2 -fI -i"tn$(CHIP)def.inc" osccal.asm -o osccal.hex
+	avrdude -c usbasp -p t$(CHIP) -U flash:w:osccal.hex:i -U hfuse:w:0x9f:m
