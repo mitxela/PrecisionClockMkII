@@ -768,8 +768,8 @@ main:
 	brne main
 
 	rcall receiveByte
-	cpi r20, 'P'
-	brne main
+	;cpi r20, 'P'
+	;brne main
 
 	rcall receiveByte
 	cpi r20, 'R'
