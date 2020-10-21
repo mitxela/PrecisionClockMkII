@@ -12,7 +12,7 @@ CHIP = 2313
 hexes := $(shell perl -lne 'm[ifdef TZ_(\w+)] and print lc("build/$$1.hex")' GPSClock.asm)
 
 
-.PHONY: all clean fuses
+.PHONY: all clean fuses osccal
 all: $(hexes)
 
 build:
@@ -31,6 +31,7 @@ flash: flash-london
 
 clean:
 	rm -rf build/
+	rm osccal.hex
 
 fuses:
 	avrdude -p t$(CHIP) -B2000 -U lfuse:w:0xe4:m
