@@ -578,7 +578,7 @@ init:
 	out DDRA,r16
 	ldi r16, 1<<6
 	out PORTD,r16
-	ldi r16, 1<<0
+	ldi r16, 1<<0 | 1<<1
 	out PORTA, r16
 
     ldi r16,0
@@ -947,6 +947,9 @@ noLeap:
 ;	lds dDeciSeconds,deciSeconds
 ;	lds dCentiSeconds,centiSeconds
 
+// Override timezone, just show UTC
+	sbis PINA,1
+	rjmp makeUTC
 
 // Backup perma-DST marker
 	sbis PINA,0
@@ -1665,7 +1668,11 @@ addHour:
 
 #endif
 
-
+; Show UTC by turning off both indicators
+makeUTC:
+	clr dGMT
+	clr dBST
+	rjmp sendAll2
 
 
 
