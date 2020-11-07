@@ -68,6 +68,7 @@
   #define DST_START_DAY      SECOND_SUNDAY
   #define DST_END_MONTH      NOVEMBER
   #define DST_END_DAY        FIRST_SUNDAY
+  #define DST_SWITCH_AT_2AM_LOCAL_TIME
 #endif
 
 #ifdef TZ_US_EASTERN
@@ -76,6 +77,7 @@
   #define DST_START_DAY      SECOND_SUNDAY
   #define DST_END_MONTH      NOVEMBER
   #define DST_END_DAY        FIRST_SUNDAY
+  #define DST_SWITCH_AT_2AM_LOCAL_TIME
 #endif
 
 #ifdef TZ_US_CENTRAL
@@ -84,6 +86,7 @@
   #define DST_START_DAY      SECOND_SUNDAY
   #define DST_END_MONTH      NOVEMBER
   #define DST_END_DAY        FIRST_SUNDAY
+  #define DST_SWITCH_AT_2AM_LOCAL_TIME
 #endif
 
 #ifdef TZ_US_MOUNTAIN
@@ -92,6 +95,7 @@
   #define DST_START_DAY      SECOND_SUNDAY
   #define DST_END_MONTH      NOVEMBER
   #define DST_END_DAY        FIRST_SUNDAY
+  #define DST_SWITCH_AT_2AM_LOCAL_TIME
 #endif
 
 #ifdef TZ_US_PACIFIC
@@ -100,6 +104,7 @@
   #define DST_START_DAY      SECOND_SUNDAY
   #define DST_END_MONTH      NOVEMBER
   #define DST_END_DAY        FIRST_SUNDAY
+  #define DST_SWITCH_AT_2AM_LOCAL_TIME
 #endif
 
 #ifdef TZ_US_ALASKA
@@ -108,6 +113,7 @@
   #define DST_START_DAY      SECOND_SUNDAY
   #define DST_END_MONTH      NOVEMBER
   #define DST_END_DAY        FIRST_SUNDAY
+  #define DST_SWITCH_AT_2AM_LOCAL_TIME
 #endif
 
 ; Some areas on Hawaii-Aleutian time observe DST (parts of Alaska), but Hawaii does not
@@ -1011,6 +1017,29 @@ isDSTEndMonth:
 	;is bst
 	rjmp addHour
 
+#ifdef DST_SWITCH_AT_2AM_LOCAL_TIME
+
+#if (BASE_TZ_OFFSET < 0 && BASE_TZ_OFFSET > -10)
+isFirstDayDST:
+	ldi r20,0
+	cpi dHours,2-BASE_TZ_OFFSET
+	cpc dTenHours,r20
+	brcs sendAll
+	rjmp addHour
+	
+
+isLastDayDST:
+	cpi dTenHours,0
+	brne sendAll
+	cpi dHours,1-BASE_TZ_OFFSET
+	brcc sendAll
+	rjmp addHour
+#else 
+  #error "Not implemented yet"
+#endif
+
+
+#else
 isFirstDayDST:
 	ldi r20,0
 	cpi dHours,0
@@ -1025,6 +1054,7 @@ isLastDayDST:
 	cpi dHours,0
 	brne sendAll
 	rjmp addHour
+#endif
 
 //////////////////////// Southern Hemisphere
 #else
@@ -1074,6 +1104,10 @@ isDSTEndMonth:
 
 	;is bst
 	rjmp addHour
+
+#ifdef DST_SWITCH_AT_2AM_LOCAL_TIME
+  #error "Not implemented yet"
+#endif
 
 isFirstDayDST:
 	ldi r20,0
