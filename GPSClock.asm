@@ -131,6 +131,7 @@
   #define DST_START_DAY      LAST_SUNDAY
   #define DST_END_MONTH      APRIL
   #define DST_END_DAY        FIRST_SUNDAY
+  #define DST_SWITCH_AT_2AM_LOCAL_TIME ; switches back at 3AM
 #endif
 
 #ifdef TZ_AUSTRALIA_EASTERN
@@ -139,6 +140,7 @@
   #define DST_START_DAY      FIRST_SUNDAY
   #define DST_END_MONTH      APRIL
   #define DST_END_DAY        FIRST_SUNDAY
+  #define DST_SWITCH_AT_2AM_LOCAL_TIME ; switches back at 3AM
 #endif
 
 #ifdef TZ_INDIA
@@ -1063,6 +1065,153 @@ isLastDayDST:
 	ldi ZL, low(DSTStartMonth*2-15)
 	add ZL, fullYears
 
+#if (BASE_TZ_OFFSET > 0 && DST_SWITCH_AT_2AM_LOCAL_TIME)
+	; Australia, NZ
+	; Start at 2am local, end at 3am local
+
+/*
+  We need to check the time and date against the switchover dates minus the base offset.
+  Since first-sunday-of-the-month can sometimes be on the first of the month, we need to treat
+  those years as a special case.
+
+  in pseudocode:
+
+  if (dstStartDay ==1){
+    if (dstStartMonth-1 >  this month) goto addHour
+    if (dstStartMonth-1 == this month) {
+      load days in last month
+      if ( today == daysInLastMonth) goto isFirstDayDST
+      else sendAll
+    }
+  } else {
+    if (dstStartMonth >  this month) goto addHour
+    if (dstStartMonth == this month) {
+      if (today >  dstStartDay-1) goto addHour
+      if (today == dstStartDay-1) goto isFirstDayDST
+  		else sendAll
+    }
+  }
+  
+  if (dstEndDay ==1) {
+    if (dstEndMonth-1 <  this month) goto addHour
+    if (dstEndMonth-1 == this month){
+      load days in last month
+      if ( today == daysInLastMonth) goto isLastDayDST
+    }
+  } else {
+    if (dstEndMonth <  this month) goto addHour
+    if (dstEndMonth == this month) {
+      if (today <  dstEndDay-1) goto addHour
+      if (today == dstEndDay-1) goto isLastDayDST
+    }
+  }
+  goto sendAll
+  
+  
+  isFirstDayDST:
+    if (hours > 24-10) goto addHour
+  
+  isLastDayDST:
+    if (hours < 24-10) goto addHour
+
+*/
+.def dayOfMonthBCD = r21
+	mov dayOfMonthBCD,dTenDays
+	swap dayOfMonthBCD
+	or dayOfMonthBCD,dDays
+
+	lpm r20,Z
+	cpi r20, 1
+	brne dstNotStartOn1st
+
+	ldi r20, DST_START_MONTH-1
+	cp fullMonths,r20
+	breq dstIsStartMonthMinus1
+	brcs checkForDstEnd
+	rjmp addHour
+
+dstIsStartMonthMinus1:
+	cp dayOfMonthBCD, daysInMonth
+	brne sendAll
+	rjmp isFirstDayDST
+
+dstNotStartOn1st:
+	ldi r20, DST_START_MONTH
+	cp fullMonths,r20
+	breq dstIsStartMonth
+	brcs checkForDstEnd
+	rjmp addHour
+
+dstIsStartMonth:
+	; BCD subtraction - aus is fine but NZ's last-sunday-of month could cause an overflow
+	lpm r20,Z
+	subi r20,1
+	brhc dstNotStartOn30th
+	subi r20, 6
+
+dstNotStartOn30th:
+	cp dayOfMonthBCD, r20
+	breq isFirstDayDST
+	brcs sendAll
+	rjmp addHour
+
+
+checkForDstEnd:
+	subi ZL, (DSTStartMonth-DSTEndMonth)*2
+	lpm r20,Z
+	cpi r20, 1
+	brne dstNotEndOn1st
+
+	ldi r20, DST_END_MONTH-1
+	cp fullMonths,r20
+	breq dstIsEndMonthMinus1
+	brcc sendAll
+	rjmp addHour
+
+dstIsEndMonthMinus1:
+	cp dayOfMonthBCD, daysInMonth
+	breq isLastDayDST
+	rjmp sendAll
+
+dstNotEndOn1st:
+	ldi r20, DST_END_MONTH
+	cp fullMonths,r20
+	breq dstIsEndMonth
+	brcc sendAll
+	rjmp addHour
+
+dstIsEndMonth:
+	lpm r20,Z
+	subi r20,1 ; both aus and nz end on "first sunday of x", no need for bcd adjust
+	cp dayOfMonthBCD, r20
+	breq isLastDayDST
+	brcc sendAll
+	rjmp addHour
+
+
+#if (BASE_TZ_OFFSET>=10)
+
+isFirstDayDST:
+	ldi r20, 1
+	cpi dHours, (24-10+2-BASE_TZ_OFFSET)
+	cpc dTenHours,r20
+	brcs sendAll
+	rjmp addHour
+
+isLastDayDST:
+	ldi r20, 1
+	cpi dHours, (24-10+2-BASE_TZ_OFFSET)
+	cpc dTenHours,r20
+	brcc sendAll
+	rjmp addHour
+
+#else
+  #error "Not implemented yet"
+#endif
+
+.undef dayOfMonthBCD
+
+#else 
 	ldi r20, DST_START_MONTH
 	cp fullMonths,r20
 	breq isDSTStartMonth
@@ -1105,9 +1254,6 @@ isDSTEndMonth:
 	;is bst
 	rjmp addHour
 
-#ifdef DST_SWITCH_AT_2AM_LOCAL_TIME
-  #error "Not implemented yet"
-#endif
 
 isFirstDayDST:
 	ldi r20,0
@@ -1123,7 +1269,7 @@ isLastDayDST:
 	cpi dHours,0
 	brne sendAll
 	rjmp addHour
-
+#endif
 #endif
 #endif
 
