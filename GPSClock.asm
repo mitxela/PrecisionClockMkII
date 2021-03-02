@@ -117,7 +117,13 @@
 #endif
 
 ; Some areas on Hawaii-Aleutian time observe DST (parts of Alaska), but Hawaii does not
-#ifdef TZ_US_HAWAII
+#ifdef TZ_HAWAII
+  #define BASE_TZ_OFFSET     -10
+  #define NO_DST
+  #define INDICATE_UTC
+#endif
+
+#ifdef TZ_HAWAII_WITH_DST
   #define BASE_TZ_OFFSET     -10
   #define DST_START_MONTH    MARCH
   #define DST_START_DAY      SECOND_SUNDAY
@@ -1340,11 +1346,14 @@ rjmp main
 
 
 addHour:
-
+#ifdef INDICATE_UTC
+	clr dGMT
+	clr dBST
+#else
 	ldi r20,0b10000000
 	mov dBST,r20
 	clr dGMT
-
+#endif
 
 	inc dHours
 	ldi r18,2
@@ -1622,10 +1631,14 @@ rjmp main
 
 
 addHour:
-
+#ifdef INDICATE_UTC
+	clr dGMT
+	clr dBST
+#else
 	ldi r20,0b10000000
 	mov dBST,r20
 	clr dGMT
+#endif
 
 	ldi r20, BASE_TZ_OFFSET+1
 
@@ -1841,9 +1854,14 @@ rjmp main
 
 addHour:
 
+#ifdef INDICATE_UTC
+	clr dGMT
+	clr dBST
+#else
 	ldi r20,0b10000000
 	mov dBST,r20
 	clr dGMT
+#endif
 
 	ldi r20, BASE_TZ_OFFSET+1
 
@@ -1853,10 +1871,17 @@ addHour:
 
 #endif
 
-; Show UTC by turning off both indicators
 makeUTC:
+#ifdef INDICATE_UTC
+	ldi r20,0b10000000
+	mov dBST,r20
+	clr dGMT
+#else
+; Show UTC by turning off both indicators
 	clr dGMT
 	clr dBST
+#endif
+
 	rjmp sendAll2
 
 
