@@ -170,6 +170,11 @@
   #define NO_DST
 #endif
 
+// Brazil abolished DST in 2019
+#ifdef TZ_BRAZIL
+  #define BASE_TZ_OFFSET     -3
+  #define NO_DST
+#endif
 
 
 #ifndef NO_DST
