@@ -149,6 +149,16 @@
   #define DST_SWITCH_AT_2AM_LOCAL_TIME ; switches back at 3AM
 #endif
 
+#ifdef TZ_AUSTRALIA_CENTRAL
+  #define BASE_TZ_OFFSET     9
+  #define FRACTIONAL_OFFSET  30
+  #define DST_START_MONTH    OCTOBER
+  #define DST_START_DAY      FIRST_SUNDAY
+  #define DST_END_MONTH      APRIL
+  #define DST_END_DAY        FIRST_SUNDAY
+  #define DST_SWITCH_AT_2AM_LOCAL_TIME ; switches back at 3AM
+#endif
+
 #ifdef TZ_INDIA
   #define BASE_TZ_OFFSET     5
   #define FRACTIONAL_OFFSET 30
@@ -1200,8 +1210,39 @@ dstIsEndMonth:
 	rjmp addHour
 
 
-#if (BASE_TZ_OFFSET>=10)
+#if (BASE_TZ_OFFSET>=9)
 
+#ifdef FRACTIONAL_OFFSET
+  #if (FRACTIONAL_OFFSET==30) // australia central
+isFirstDayDST:
+	ldi r20, 1
+	cpi dHours, (24-10+1-BASE_TZ_OFFSET)
+	cpc dTenHours,r20
+	breq isFirstHourDST
+	brcs sendAll
+	rjmp addHour
+
+isFirstHourDST:
+	cpi dTenMinutes, 3
+	brcs sendAll
+	rjmp addHour
+
+isLastDayDST:
+	ldi r20, 1
+	cpi dHours, (24-10+1-BASE_TZ_OFFSET)
+	cpc dTenHours,r20
+	breq isLastHourDST
+	brcc sendAll
+	rjmp addHour
+
+isLastHourDST:
+	cpi dTenMinutes, 3
+	brcc sendAll
+	rjmp addHour
+  #else
+    #error "Not implemented yet"
+  #endif
+#else
 isFirstDayDST:
 	ldi r20, 1
 	cpi dHours, (24-10+2-BASE_TZ_OFFSET)
@@ -1215,6 +1256,8 @@ isLastDayDST:
 	cpc dTenHours,r20
 	brcc sendAll
 	rjmp addHour
+
+#endif
 
 #else
   #error "Not implemented yet"
