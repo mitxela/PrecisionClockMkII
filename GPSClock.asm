@@ -605,11 +605,15 @@ init:
 
 	out DDRD,r16
 	out DDRA,r16
+#ifdef USE_CRYSTAL
+	ldi r16, 1<<6 | 1<<1 | 1<<3
+	out PORTD,r16
+#else
 	ldi r16, 1<<6
 	out PORTD,r16
 	ldi r16, 1<<0 | 1<<1
 	out PORTA, r16
-
+#endif
     ldi r16,0
     out UBRRH,r16
     ldi r16,51
@@ -976,6 +980,17 @@ noLeap:
 ;	lds dDeciSeconds,deciSeconds
 ;	lds dCentiSeconds,centiSeconds
 
+#ifdef USE_CRYSTAL
+
+// Override timezone, just show UTC
+	sbis PIND,1
+	rjmp makeUTC
+
+// Backup perma-DST marker
+	sbis PIND,3
+	rjmp addHour
+
+#else
 // Override timezone, just show UTC
 	sbis PINA,1
 	rjmp makeUTC
@@ -983,6 +998,7 @@ noLeap:
 // Backup perma-DST marker
 	sbis PINA,0
 	rjmp addHour
+#endif
 
 // DST enabled ?
 	sbic PIND,6
