@@ -17,12 +17,16 @@ all: $(hexes)
 
 build:
 	mkdir build
+	mkdir build/with_crystal
 
 $(hexes): %.hex: GPSClock.asm build
 	avrasm2 -fI -i"tn$(CHIP)def.inc" \
 	-D$(shell echo "$@" | perl -lne 'm[build/(.*)\.hex] and print uc("TZ_$$1")') \
 	$< -o $@
-
+	avrasm2 -fI -i"tn$(CHIP)def.inc" \
+	-DUSE_CRYSTAL \
+	-D$(shell echo "$@" | perl -lne 'm[build/(.*)\.hex] and print uc("TZ_$$1")') \
+	$< -o $(shell echo "$@" | sed 's|build/|build/with_crystal/|')
 
 flash-%: build/%.hex
 	avrdude -c usbasp -p t$(CHIP) -U flash:w:$<:i
