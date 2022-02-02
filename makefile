@@ -5,7 +5,7 @@
 # Cross-platform solution is to have a different wrapper script on each machine
 # On linux /usr/bin/avrasm2 looks like:
 #		#!/bin/sh
-#		wine ~/avrasm/avrasm2.exe -I ~/avrasm $*
+#		exec wine ~/avrasm/avrasm2.exe -I ~/avrasm "$@"
 
 CHIP = 2313
 
