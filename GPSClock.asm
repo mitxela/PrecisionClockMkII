@@ -159,6 +159,12 @@
   #define DST_SWITCH_AT_2AM_LOCAL_TIME ; switches back at 3AM
 #endif
 
+#ifdef TZ_AUSTRALIA_WESTERN
+  #define BASE_TZ_OFFSET     8
+  #define NO_DST
+  #define INDICATE_UTC
+#endif
+
 #ifdef TZ_INDIA
   #define BASE_TZ_OFFSET     5
   #define FRACTIONAL_OFFSET 30
