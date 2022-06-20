@@ -165,6 +165,12 @@
   #define INDICATE_UTC
 #endif
 
+#ifdef TZ_INDOCHINA
+  #define BASE_TZ_OFFSET     7
+  #define NO_DST
+  #define INDICATE_UTC
+#endif
+
 #ifdef TZ_INDIA
   #define BASE_TZ_OFFSET     5
   #define FRACTIONAL_OFFSET 30
