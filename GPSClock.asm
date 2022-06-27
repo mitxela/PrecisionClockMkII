@@ -265,6 +265,7 @@ tenYears: .byte 1
 
 fix: .byte 1
 fixDisplay: .byte 1
+dataValid: .byte 1
 
 
 
@@ -592,6 +593,9 @@ init:
   ldi r16, 0b10000000
   sts fix, r16
 
+  ldi r16, 0b00000000
+  sts dataValid, r16
+
 	ldi r16, (1<<WGM12|1<<CS11) ;/8
 	out TCCR1B,r16
 
@@ -869,14 +873,13 @@ main:
 
 	rcall waitForComma	; end of milliseconds
 
-	; rcall receiveByte
-	; cpi r20, 'A'
-	; brne noFixYet
-	; lds r20,fix
-	; ldi r21,0b10000000
-	; eor r20,r21
-	; sts fix,r20
-; noFixYet:
+
+	rcall receiveByte
+	cpi r20, 'A'
+	brne dataNotValid
+	ldi r21,0b10000000
+	sts dataValid,r21
+dataNotValid:
 
 	rcall waitForComma	; status
 	rcall waitForComma	; latitude
@@ -2073,7 +2076,7 @@ push ZL
   out TCNT1L,ZH
 
 lds ZL,fix
-ldi ZH,0b10000000
+lds ZH,dataValid
 eor ZL,ZH
 sts fix,ZL
 
