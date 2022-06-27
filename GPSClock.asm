@@ -2066,55 +2066,7 @@ shiftBothLoop:
 	ret
 
 
-; Calibrate interpolated centiseconds to match the 1PPS output
-timingAdjust:
 
-push ZH
-push ZL
-  clr ZH
-  out TCNT1H,ZH
-  out TCNT1L,ZH
-
-lds ZL,fix
-lds ZH,dataValid
-eor ZL,ZH
-sts fix,ZL
-
-  cpi dDeciSeconds, 5
-  brcc timingSlow
-
-
-timingFast:
-  in ZL, OCR1AL
-  in ZH, OCR1AH
-  adiw ZH : ZL, 1
-  out OCR1AH, ZH
-  out OCR1AL, ZL
-  ldi dDeciSeconds,0 
-  ldi dCentiSeconds,0
-
-  pop ZL
-  pop ZH
-  out SREG, r15
-  reti
-
-
-timingSlow:
-  in ZL, OCR1AL
-  in ZH, OCR1AH
-  sbiw ZH : ZL, 1
-  out OCR1AH, ZH
-  out OCR1AL, ZL
-  ldi dDeciSeconds,9 
-  ldi dCentiSeconds,9
-
-
-  ldi ZH, 1<<OCF0A
-  out TIFR, ZH
-
-pop ZL
-pop ZH
-rjmp rollover
 
 
 
@@ -2243,3 +2195,55 @@ monthLookup:
   .db $24,$29,$28,$27,$26,$24,$30,$29,$28,$26,$25,$24,$30,$28,$27,$26,$25,$30,$29,$28,$27,$25,$24,$30,$29,$27,$26,$25,$24,$29,$28,$27,$26,$24,$30,$29,$28,$26,$25,$24,$30,$28,$27,$26,$25,$30,$29,$28,$27,$25,$24,$30,$29,$27,$26,$25,$24,$29,$28,$27,$26,$24,$30,$29,$28,$26,$25,$24,$30,$28,$27,$26,$25,$30,$29,$28,$27,$25,$24,$30,$29,$27,$26,$25,$24
 #endif
 
+
+
+
+; Calibrate interpolated centiseconds to match the 1PPS output
+timingAdjust:
+
+push ZH
+push ZL
+  clr ZH
+  out TCNT1H,ZH
+  out TCNT1L,ZH
+
+lds ZL,fix
+lds ZH,dataValid
+eor ZL,ZH
+sts fix,ZL
+
+  cpi dDeciSeconds, 5
+  brcc timingSlow
+
+
+timingFast:
+  in ZL, OCR1AL
+  in ZH, OCR1AH
+  adiw ZH : ZL, 1
+  out OCR1AH, ZH
+  out OCR1AL, ZL
+  ldi dDeciSeconds,0 
+  ldi dCentiSeconds,0
+
+  pop ZL
+  pop ZH
+  out SREG, r15
+  reti
+
+
+timingSlow:
+  in ZL, OCR1AL
+  in ZH, OCR1AH
+  sbiw ZH : ZL, 1
+  out OCR1AH, ZH
+  out OCR1AL, ZL
+  ldi dDeciSeconds,9 
+  ldi dCentiSeconds,9
+
+
+  ldi ZH, 1<<OCF0A
+  out TIFR, ZH
+
+pop ZL
+pop ZH
+rjmp rollover
