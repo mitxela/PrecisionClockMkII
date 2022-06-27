@@ -98,6 +98,13 @@
   #define DST_SWITCH_AT_2AM_LOCAL_TIME
 #endif
 
+; Phoenix is Mountain Time but no DST
+#ifdef TZ_US_ARIZONA
+  #define BASE_TZ_OFFSET     -7
+  #define NO_DST
+  #define INDICATE_UTC
+#endif
+
 #ifdef TZ_US_PACIFIC
   #define BASE_TZ_OFFSET     -8
   #define DST_START_MONTH    MARCH
