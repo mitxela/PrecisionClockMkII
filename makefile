@@ -21,10 +21,12 @@ build:
 
 $(hexes): %.hex: GPSClock.asm build
 	avrasm2 -fI -i"tn$(CHIP)def.inc" \
+	$(EXTRA) \
 	-D$(shell echo "$@" | perl -lne 'm[build/(.*)\.hex] and print uc("TZ_$$1")') \
 	$< -o $@
 	avrasm2 -fI -i"tn$(CHIP)def.inc" \
 	-DUSE_CRYSTAL \
+	$(EXTRA) \
 	-D$(shell echo "$@" | perl -lne 'm[build/(.*)\.hex] and print uc("TZ_$$1")') \
 	$< -o $(shell echo "$@" | sed 's|build/|build/with_crystal/|')
 

@@ -884,8 +884,10 @@ main:
 	rcall receiveByte
 	cpi r20, 'A'
 	brne dataNotValid
+#ifndef DISABLE_BLINKING_ENTIRELY
 	ldi r21,0b10000000
 	sts dataValid,r21
+#endif
 dataNotValid:
 
 	rcall waitForComma	; status
