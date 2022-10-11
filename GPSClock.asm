@@ -156,6 +156,13 @@
   #define DST_SWITCH_AT_2AM_LOCAL_TIME ; switches back at 3AM
 #endif
 
+; Australia Eastern Time without DST
+#ifdef TZ_AUSTRALIA_QUEENSLAND
+  #define BASE_TZ_OFFSET     10
+  #define NO_DST
+  #define INDICATE_UTC
+#endif
+
 #ifdef TZ_AUSTRALIA_CENTRAL
   #define BASE_TZ_OFFSET     9
   #define FRACTIONAL_OFFSET  30
