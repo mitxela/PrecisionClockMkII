@@ -596,7 +596,33 @@ overflow13:
 	reti
 
 
+/*
 
+Pin Configurations:
+
+RESET
+PD0 GPS_DATA
+PD1 - [UTC Mode with Crystal]
+PA1 [ XTAL ] UTC Mode
+PA0 [ XTAL ] PermaDST
+PD2 PPS
+PD3 - [PermaDST with Crystal]
+PD4 -
+PD5 DisplayTest
+GND
+
+PD6 DST_ENABLE
+PB0 SPI_DATA
+PB1 SPI_CLK
+PB2 LD_TIME
+PB3 LD_DATE
+PB4 -
+PB5 -
+PB6 -
+PB7 -
+VCC
+
+*/
 
 
 
