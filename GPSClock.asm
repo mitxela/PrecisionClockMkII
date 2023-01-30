@@ -643,10 +643,10 @@ init:
 	out DDRD,r16
 	out DDRA,r16
 #ifdef USE_CRYSTAL
-	ldi r16, 1<<6 | 1<<1 | 1<<3
+	ldi r16, 1<<6 | 1<<5 | 1<<1 | 1<<3
 	out PORTD,r16
 #else
-	ldi r16, 1<<6
+	ldi r16, 1<<6 | 1<<5
 	out PORTD,r16
 	ldi r16, 1<<0 | 1<<1
 	out PORTA, r16
@@ -684,6 +684,8 @@ init:
 
 	ldi r18,$FF ;Display test
 	ldi r19,$00
+	sbis PIND,5
+	inc r19
 	rcall shiftBoth
 
 
