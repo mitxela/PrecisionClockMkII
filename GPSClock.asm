@@ -217,6 +217,7 @@
 #ifdef TZ_JAPAN
   #define BASE_TZ_OFFSET     9
   #define NO_DST
+  #define INDICATE_UTC
 #endif
 
 // Brazil abolished DST in 2019
